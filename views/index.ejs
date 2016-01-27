@@ -1,0 +1,137 @@
+<html>
+<head>
+	<title>Chatroom</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+	<style type="text/css">
+	.container{
+		padding-top: 75px;
+	}
+	.size{
+  		height: 450px;
+  		overflow: scroll;
+  		margin-right: 0px;
+  		padding: 25px;
+  		/*border: 1px solid black*/
+	}
+	#userson{
+  		height: 450px;
+  		padding-top: 25px;
+  		border: 1px solid lightgrey;
+  		border-radius: 10px;
+  		margin-left: 0px;
+  		overflow: scroll;
+	}
+	#userson h4{
+		margin-bottom: 20px;
+	}
+	.blue{
+		color: blue;
+	}
+	.red{
+		color:red;
+	}
+	.time{
+		color: lightgrey;
+		font-size: 10px;
+		margin-top: 0px;
+		margin-bottom: 0px;
+	}
+	</style>
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+	<meta charset="UTF-8">
+	
+    <script type ="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type ="text/javascript">
+        $(document).ready(function (){
+        	var socket = io.connect();
+        	var value;
+
+        	function formatDate(date) {
+			  var hours = date.getHours();
+			  var minutes = date.getMinutes();
+			  var ampm = hours >= 12 ? 'pm' : 'am';
+			  hours = hours % 12;
+			  hours = hours ? hours : 12; // the hour '0' should be '12'
+			  minutes = minutes < 10 ? '0'+minutes : minutes;
+			  var strTime = hours + ':' + minutes + ' ' + ampm;
+			  return date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + "  " + strTime;
+			}
+
+			var d = new Date();
+			var newdate = formatDate(d);
+			
+			
+  			$('#messages').scrollTop(1E10);
+			
+
+			var person = prompt("Welcome! Please enter your name");
+	    	if (person != "" && person != null) {
+	    		console.log(person);
+	        	socket.emit("new_person", person)
+	    	}
+	    	if (person == "" || person == null) {
+	    		person = "anonymous"+(Math.floor((Math.random() * 100000) + 10000));
+	        	socket.emit("new_person", person)
+	    	}
+	    	socket.on("display_new_person", function(convo){
+	    		$('#messages').html(convo);
+	    		$('#messages').scrollTop(1E10);
+	    	});
+	    	socket.on("display_online", function(users){
+	    		console.log(users);
+	    		var html = '';
+	    		for(index in users){
+	    			html += "<p>"+ users[index].name +"</p>";
+	    		}
+	    			$('#userslist').html(html);
+	    	});
+	    	$('#text').keypress(function (e) {
+				 var key = e.which;
+				 if(key == 13)  // the enter key code
+				  {
+				    $('#button').click();
+				  }
+				});   
+	    	$('#button').click(function(){
+
+	    		value = $('#text').val();
+	    		socket.emit("new_message", "<p class='time'>"+ newdate + "</p><p>" + person + " says: " + value + "</p>");
+	    		$('#messages').scrollTop(1E10);
+    			$('#text').val("");
+
+				// socket.emit("display_message");
+	    			return false;
+	    		});
+	    	socket.on("display_message", function(convo){
+	    		$('#messages').html(convo);
+	    		$('#messages').scrollTop(1E10);
+	    	});
+
+	    }); 
+    </script>
+</head>
+<body>
+	<div class="container">
+		<div class="row col-md-6 col-md-offset-3 text-center">
+			<h2>Conversate.</h2>
+		</div>
+		<div class="row"><div id="messages" class="col-md-6 col-md-offset-3 size">
+		</div>
+		<div id="userson" class="col-md-2">
+			<h4 class="text-center">Online Users:</h4>
+			<p id="userslist"></p> 
+		</div></div>
+
+
+		<div class="col-md-6 col-md-offset-3">
+		<textarea id="text" class="form-control" placeholder="enter your message here"></textarea>
+		<button id="button" class="btn btn-success pull-right">Send</button>
+	</div>
+	</div>
+</body>
+</html>
